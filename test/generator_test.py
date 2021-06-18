@@ -16,9 +16,9 @@ from src.spectra_generator import generator
 
 class TestDataset(unittest.TestCase):
     def setUp(self):
-        rmf_list = ['rmf_arf/Extracted_From_Calb/swxpc0to12s0_20010101v010.rmf', 'rmf_arf/Extracted_From_Calb/swxpc0to12s6_20010101v010.rmf']
+        rmf_list = ['rmf_arf/rmfs/swxpc0to12s0_20010101v010.rmf', 'rmf_arf/rmfs/swxpc0to12s6_20010101v010.rmf']
         arf_list = ['ESO242G008','Mkn1044','Mkn1048','MRk335','MS0117-28','QSO005636', 'RXJ0100.4-5113', 'RXJ0105.6-1416','RXJ0117.5-3826'
-               ,'RXJ0128.1-1848','RXJ0134.2-4258','RXJ0136.9-3510','RXJ0148.3-2758','RXJ0152.4-2319','TonS180']
+       ,'RXJ0128.1-1848','RXJ0134.2-4258','RXJ0136.9-3510','RXJ0148.3-2758','RXJ0152.4-2319','TonS180']
         self.spectra_generator = generator(rmf_list, arf_list)
     
     def tearDown(self):
@@ -30,7 +30,7 @@ class TestDataset(unittest.TestCase):
     def test_rmf_picker_success(self):
         random.seed(1)
         actual = self.spectra_generator._generator__rmf_picker()
-        expected = ('rmf_arf/Extracted_From_Calb/swxpc0to12s0_20010101v010.rmf', 0)
+        expected = ('rmf_arf/rmfs/swxpc0to12s0_20010101v010.rmf', 0)
         self.assertEqual(actual, expected)
 
     def test_arf_picker_success(self):
@@ -157,7 +157,7 @@ class TestDataset(unittest.TestCase):
     def test_saver_success(self):
         answers = [1,2,3]
         inputs = [333,12, 16]
-        uncertainties = [[1,1,1],[23442,44,4], [11,2,2,3,5,6]]
+        uncertainties = [[1,1,1],[23442,44,4], [11,2,2]]
         number = 7
         self.spectra_generator.saver(answers, inputs, uncertainties, number)
         with open('label'+str(number), "rb") as f:
@@ -174,5 +174,43 @@ class TestDataset(unittest.TestCase):
             file_exist = os.path.isfile(elems)
             if file_exist:
                 os.remove(elems)
+
+    def test_saver_type_exception(self):
+        answers = "wrong"
+        inputs = [333,12, 16]
+        uncertainties = [[1,1,1],[23442,44,4], [11,2,2]]
+        number = 7
+        with self.assertRaises(TypeError) as exception_context:
+            actual = self.spectra_generator.saver(answers, inputs, uncertainties, number)
+        self.assertEqual(str(exception_context.exception),"answers, inputs need to be lists, and uncertainties should be a nested list containing three lists!")
+
+    def test_saver_mismatched_length_exception(self):
+        answers = [1,2,3]
+        inputs = [333,12, 16]
+        uncertainties = [[1,1,1],[23442,44,4], [11,2,2,3,5,6]]
+        number = 7
+        with self.assertRaises(ValueError) as exception_context:
+            actual = self.spectra_generator.saver(answers, inputs, uncertainties, number)
+        self.assertEqual(str(exception_context.exception),"All lists (answers, inputs, and all lists in uncertainties) must have the same length!")
+
+    def test_saver_len_uncertainty_exception(self):
+        answers = [1,2,3]
+        inputs = [333,12, 16]
+        uncertainties = [[1,1,1],[23442,44,4], [11,2,2], [1,2,3]]
+        number = 7
+        with self.assertRaises(ValueError) as exception_context:
+            actual = self.spectra_generator.saver(answers, inputs, uncertainties, number)
+        self.assertEqual(str(exception_context.exception),"uncertainties list should contain exactly 3 lists")
+
+    def test_saver_non_numeric_exception(self):
+        answers = [1,2,3]
+        inputs = [333,12, 16]
+        uncertainties = [[1,1,1],[23442,44,4], [11,2,"1"]]
+        number = 7
+        with self.assertRaises(ValueError) as exception_context:
+            actual = self.spectra_generator.saver(answers, inputs, uncertainties, number)
+        self.assertEqual(str(exception_context.exception),"All elements of given list must be numerical!")
+
+
 
 

@@ -299,9 +299,23 @@ class generator:
         uncertainties : list
             Uncertainty data for NN.
         number : int
-            Concatenated to list title. Increase as necessary
+            Concatenated to list title to distinguish saved files. Increase as necessary
             
         """
+        if type(answers) != list or type(inputs) != list or type(uncertainties) != list or type(uncertainties[0]) != list or type(uncertainties[1]) != list or type(uncertainties[2]) != list:
+            raise TypeError("answers, inputs need to be lists, and uncertainties should be a nested list containing three lists!") 
+        #Check length of lists (https://stackoverflow.com/questions/35791051/better-way-to-check-if-all-lists-in-a-list-are-the-same-length)
+        all_list = [answers, inputs, uncertainties[0], uncertainties[1], uncertainties[2]]
+        loop = iter(all_list)
+        list_len = len(next(loop))
+        if not all(len(x) == list_len for x in loop):
+             raise ValueError('All lists (answers, inputs, and all lists in uncertainties) must have the same length!')         
+        if len(uncertainties) != 3:
+            raise ValueError('uncertainties list should contain exactly 3 lists')
+        for lists in all_list:
+            for vals in lists:
+                if type(vals) != int and type(vals) != float:
+                    raise ValueError("All elements of given list must be numerical!")
         with open('label'+str(number), "wb") as f:
             pickle.dump(answers, f)
         with open('inputs'+str(number), "wb") as f:
