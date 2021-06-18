@@ -4,12 +4,14 @@ See the original paper for details on how parameters of the AGN were selected.
 Citations:
 xspec: Arnaud, K.A., 1996, Astronomical Data Analysis Software and Systems V, eds. Jacoby G. and Barnes J., p17, ASP Conf. Series volume 101.
 """
-
+import sys
 import xspec
 import matplotlib.pyplot as plt
 import random
 import math
 import pickle
+import os
+import warnings
 
 #The RMF and ARF names
 rmf_list = ['rmf_arf/Extracted_From_Calb/swxpc0to12s0_20010101v010.rmf', 'rmf_arf/Extracted_From_Calb/swxpc0to12s6_20010101v010.rmf']
@@ -20,6 +22,23 @@ class generator:
     def __init__(self, rmf_list, arf_list):
         self.rmf_list = rmf_list
         self.arf_list = arf_list
+        #Defines all parameter limits (as laid out in paper)
+        self.mass_min = 2
+        self.mass_max = 450
+        self.dist_min = 65
+        self.dist_max = 6000
+        self.logmdot_min = -1.65
+        self.logmdot_max = 0.39
+        self.astar_min = 0.5
+        self.astar_max = .998
+        self.i_min = 10
+        self.i_max = 50
+        self.redshift_min = 0.002
+        self.redshift_max = 0.349
+        self.exposure_time_min = 2000
+        self.exposure_time_max = 20000
+        #For testing purposes
+        self.test = False
         
     def __rmf_picker(self):
         """
@@ -77,21 +96,21 @@ class generator:
         normalized_labels : list
             Normalized values of the above 6 parameters of the QSOSED model.
         """
-        mass = random.randint(2,450)*10**6
+        mass = random.randint(self.mass_min,self.mass_max)*10**6
         #How to constrain distance 
-        dist = random.randint(65,6000) #Used to be 100,10000
+        dist = random.randint(self.dist_min,self.dist_max) #Used to be 100,10000
         #Check the allowed values by XSPEC
-        logmdot = random.uniform(-1.65, .39)
+        logmdot = random.uniform(self.logmdot_min,self.logmdot_max)
         #Used that astar tends to relatively large among Seyfert 1 Galaxies. Will likely have very little impact on findings
-        astar = random.uniform(0.5,.998)
+        astar = random.uniform(self.astar_min,self.astar_max)
         #Inclination is typically low in Seyfert 1. Make sure this is in degrees NOT radians
-        i = random.randint(10,50)
+        i = random.randint(self.i_min,self.i_max)
         i_rad = math.radians(i)
         cosi = math.cos(i_rad)
         #Constrained by the 92
-        redshift = random.uniform(0.002,0.349)
+        redshift = random.uniform(self.redshift_min,self.redshift_max)
         #Constrained by the 15
-        exposure_time = random.randint(2000, 20000)
+        exposure_time = random.randint(self.exposure_time_min,self.exposure_time_max)
         normalized_labels = self.__normalizer(mass, dist, logmdot, astar, cosi, redshift)
         return mass, dist, logmdot, astar, cosi, redshift, exposure_time, normalized_labels
 
@@ -120,13 +139,18 @@ class generator:
         normalized_labels : list
             Normalized values of the above 6 parameters of the QSOSED model.
         """
-        mass_normalized = (mass-2*10**6)/((450-2)*10**6)
-        dist_normalized = (dist-65)/(6000-65)
-        logmdot_normalized = (logmdot+1.65)/(0.39+1.65)
-        astar_normalized = (astar-.5)/(0.998-0.5)
-        cosi_normalized = (cosi - math.cos(math.radians(50)))/(math.cos(math.radians(10))-math.cos(math.radians(50)))
-        redshift_normalized = (redshift - 0.002)/(0.349-0.002)
-        return [mass_normalized, dist_normalized, logmdot_normalized, astar_normalized, cosi_normalized, redshift_normalized]
+        if type(mass) != int or type(dist) != int or type(logmdot) != float or type(astar) != float or type(cosi) != float or type(redshift) != float:
+            raise TypeError("Parameters are not of the correct type! Mass and Distance need to be integers, all others should be floats")
+        mass_normalized = (mass-self.mass_min*10**6)/((self.mass_max-self.mass_min)*10**6)
+        dist_normalized = (dist-self.dist_min)/(self.dist_max-self.dist_min)
+        logmdot_normalized = (logmdot-self.logmdot_min)/(self.logmdot_max-self.logmdot_min)
+        astar_normalized = (astar-self.astar_min)/(self.astar_max-self.astar_min)
+        cosi_normalized = (cosi - math.cos(math.radians(self.i_max)))/(math.cos(math.radians(self.i_min))-math.cos(math.radians(self.i_max)))
+        redshift_normalized = (redshift-self.redshift_min)/(self.redshift_max-self.redshift_min)
+        norm_params = [mass_normalized, dist_normalized, logmdot_normalized, astar_normalized, cosi_normalized, redshift_normalized]
+        if any(value < 0 for value in norm_params) or any(value > 1 for value in norm_params):
+            raise ValueError("Parameters are out of bounds or Normalization limits have not been updated!")
+        return norm_params
 
     def __xspec_data_retriever(self, mass, dist, logmdot, astar, cosi, redshift, nSpectra, rmf, arf, exposure_time, counter):
         """
@@ -159,6 +183,14 @@ class generator:
             a list of the values of the QSOSED model at each of the respective energy
             values.
         """
+        params = [mass, dist, logmdot, astar, cosi, redshift, nSpectra, exposure_time]
+        for elems in params:
+            if type(elems) != int and type(elems) != float:
+                raise TypeError("Parameters need to be numbers!") 
+        if mass < self.mass_min*10**6 or mass > self.mass_max*10**6 or dist < self.dist_min or dist > self.dist_max  or logmdot < self.logmdot_min or logmdot > self.logmdot_max  or astar < self.astar_min or astar > self.astar_max  or cosi > math.cos(math.radians(self.i_min)) or cosi < math.cos(math.radians(self.i_max))  or redshift < self.redshift_min or redshift > self.redshift_max  or exposure_time < self.exposure_time_min or exposure_time > self.exposure_time_max:
+            raise ValueError("Parameters are out of defined bounds!")
+        xspec.Xset.chatter = -100
+        xspec.Xset.logChatter = -100
         data = xspec.AllData
         xspec.Model("qsosed", setPars = {1:mass,2:dist,3:logmdot,4:astar,5:cosi,6:redshift})
         fake1= xspec.FakeitSettings(response=rmf, arf=arf, exposure= exposure_time,
@@ -199,15 +231,25 @@ class generator:
         uncertainties : list
             Uncertainty data for NN.
         """
+        if type(num_of_iterations) != int and type(num_of_iterations) != float:
+                raise TypeError("Parameters need to be numbers!") 
+        if num_of_iterations > 10000:
+            warnings.warn("For large num_of_iterations, can cause memory errors")
         answers = [0]*num_of_iterations
         inputs = [0]*num_of_iterations
         uncertainties = [0]*num_of_iterations
         counter = 0
         nSpectra = 1
+        if self.test:
+            xspec.Xset.seed = 1
+            if num_of_iterations > 10000:
+                return
         for i in range(num_of_iterations):
             #Pick RMF,ARF
             rmf, rmf_number = self.__rmf_picker()
+            rmf = "build/" + rmf
             arf, arf_number = self.__arf_picker()
+            arf = "build/"+ arf
             #Define Parameters
             mass, dist, logmdot, astar, cosi, redshift, exposure_time, normalized_labels = self.__param_selector()
             energies, rates, uncertainty_list = self.__xspec_data_retriever(mass, dist, logmdot, astar, cosi,
@@ -215,8 +257,8 @@ class generator:
                                                    counter)
             #Ensure data is bright enough
             while sum(rates)/exposure_time < 0.001:
-                mass, dist, logmdot, astar, cosi, redshift, exposure_time, normalized_labels = param_selector()
-                energies, rates, uncertainty_list = xspec_data_retriever(mass, dist, logmdot, astar, cosi,
+                mass, dist, logmdot, astar, cosi, redshift, exposure_time, normalized_labels = self.__param_selector()
+                energies, rates, uncertainty_list = self.__xspec_data_retriever(mass, dist, logmdot, astar, cosi,
                                                        redshift, nSpectra, rmf, arf, exposure_time,
                                                        counter)
             answers[i] = normalized_labels
@@ -226,7 +268,6 @@ class generator:
             energies.append(exposure_time)
             inputs[i] = energies
             uncertainties[i] = uncertainty_list
-            counter = counter + 1
         return answers, inputs, uncertainties
 
     def plotter(x,y):
@@ -269,7 +310,6 @@ class generator:
             pickle.dump(uncertainties,f)
         return
         
-
 #Run Script:
 ##num_of_iterations = 300
 ##gen = generator(rmf_list, arf_list)
