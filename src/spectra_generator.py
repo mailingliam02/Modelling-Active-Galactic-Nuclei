@@ -14,7 +14,7 @@ import os
 import warnings
 
 #The RMF and ARF names
-rmf_list = ['rmf_arf/Extracted_From_Calb/swxpc0to12s0_20010101v010.rmf', 'rmf_arf/Extracted_From_Calb/swxpc0to12s6_20010101v010.rmf']
+rmf_list = ['rmf_arf/rmfs/swxpc0to12s0_20010101v010.rmf', 'rmf_arf/rmfs/swxpc0to12s6_20010101v010.rmf']
 arf_list = ['ESO242G008','Mkn1044','Mkn1048','MRk335','MS0117-28','QSO005636', 'RXJ0100.4-5113', 'RXJ0105.6-1416','RXJ0117.5-3826'
        ,'RXJ0128.1-1848','RXJ0134.2-4258','RXJ0136.9-3510','RXJ0148.3-2758','RXJ0152.4-2319','TonS180']
 
