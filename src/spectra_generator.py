@@ -265,7 +265,7 @@ class generator:
             energies.extend(rates)
             energies.append(rmf_number)
             energies.append(arf_number)
-            energies.append(exposure_time)
+            energies.append(exposure_time-self.exposure_time_min/(self.exposure_time_max-self.exposure_time_min))
             inputs[i] = energies
             uncertainties[i] = uncertainty_list
         return answers, inputs, uncertainties

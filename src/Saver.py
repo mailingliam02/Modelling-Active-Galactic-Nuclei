@@ -11,6 +11,29 @@ import datetime
 import itertools
 import copy
 import random
+
+class preprocessing:
+    def __init__(self, number):
+        self.labels = pickle.load(open("label"+str(number)), "rb")
+        self.inputs = pickle.load(open("inputs"+str(number)), "rb")
+        self.__setup()
+
+    def __normalize(self):
+        
+                
+
+
+
+
+
+
+for _, __, files in os.walk("./build"):
+    file_list = files
+for files in file_list:
+    if files[0:5] == "label" and files[5:].isdigit():
+
+                
+                
 #HYPERPARAMETERS:
 ##inputs_train = pickle.load(open("inputs1","rb")) #List of Lists of [energies, rates, rmf_number, arf_number, exposure_time]
 ##print("Train Inputs 1 Loaded")
