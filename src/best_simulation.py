@@ -34,9 +34,6 @@ epochs = 1000
 batch_size = 32
 validation_split = .2
 
-#Current Models Available:
-#cpkt --> Pretty Solid, overfits (bs = 32, lr = 0.01, n,h,h2_neurons = (256,128,64)
-
 #Changes Working Directory to Right Place
 os.chdir("/home/mailingliam/Computational_Project")
 # Prepare a directory to store all the checkpoints.
@@ -64,7 +61,6 @@ def build_and_compile_fit_model(norm):
     dnn_model = tf.keras.Sequential([
         norm,
 ##        layers.Dropout(drp_rate1),
-       # layers.Flatten(), #Had one in tutorial, not sure if we need one as well
         layers.Dense(n_neurons,activation='relu', kernel_regularizer=tf.keras.regularizers.L2(0.00005)),# input_shape = (batch_size,1993,), 
         layers.Dropout(drp_rate2),
         layers.Dense(h_neurons, activation = 'relu', kernel_regularizer= tf.keras.regularizers.L2(0.00005)),
@@ -82,8 +78,7 @@ def build_and_compile_fit_model(norm):
 ##        layers.Dense(h7_neurons, activation = 'relu'),
         layers.Dense(6)#, activation = 'sigmoid')
         ])
-    #lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-     #   initial_learning_rate, decay_steps = decay_steps, decay_rate = decay_rate)
+
     dnn_model.compile(loss = 'mean_squared_error',
               optimizer = tf.keras.optimizers.Adam(learning_rate = initial_learning_rate),
               metrics = [tf.keras.metrics.MeanAbsoluteError()])
@@ -139,41 +134,3 @@ f.write("\n")
 f.write("["+str(initial_learning_rate)+", "+ str([n_neurons,h_neurons,h2_neurons])+", " + str([drp_rate2,drp_rate3])+", "+
         str(batch_size)+", "+str(epochs)+"]")
 f.close()
-###Plot Stuff
-##epochs = range(1, len(acc) + 1)
-##plt.plot(epochs, loss, 'bo', label='Training loss')
-##plt.plot(epochs, val_loss, 'r', label='Validation loss')
-##plt.title('Training and validation loss')
-##plt.legend()
-##
-##plt.show()
-##
-##
-
-
-
-#####Get rid of the nested lists (Need to change in generator file before I make any more
-####new_inputs = [0] * len(inputs)
-####i = 0
-####def flattenNestedList(nestedList):
-####    ''' Converts a nested list to a flat list '''
-####    flatList = []
-####    # Iterate over all the elements in given list
-####    for elem in nestedList:
-####        # Check if type of element is list
-####        if isinstance(elem, list):
-####            # Extend the flat list by adding contents of this element (list)
-####            flatList.extend(flattenNestedList(elem))
-####        else:
-####            # Append the elemengt to the list
-####            flatList.append(elem)    
-####    return flatList
-####
-####for features in inputs:
-####    new_inputs[i] = flattenNestedList(features)
-####    i = i+1
-####inputs = new_inputs.copy()
-
-
-
-
